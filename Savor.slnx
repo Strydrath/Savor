@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Savor.Api/Savor.Api.csproj" />
+    <Project Path="src/Savor.Application/Savor.Application.csproj" />
+    <Project Path="src/Savor.Contracts/Savor.Contracts.csproj" />
+    <Project Path="src/Savor.Domain/Savor.Domain.csproj" />
+    <Project Path="src/Savor.Infrastructure/Savor.Infrastructure.csproj" />
+  </Folder>
+</Solution>

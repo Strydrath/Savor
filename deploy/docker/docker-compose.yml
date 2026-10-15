@@ -1,0 +1,20 @@
+﻿services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: savor-postgres
+    environment:
+      POSTGRES_DB: savor
+      POSTGRES_USER: savor
+      POSTGRES_PASSWORD: savor
+    ports:
+      - "5432:5432"
+    volumes:
+      - savor_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U savor -d savor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  savor_pgdata:
