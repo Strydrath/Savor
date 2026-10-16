@@ -7,7 +7,7 @@
       POSTGRES_USER: savor
       POSTGRES_PASSWORD: savor
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - savor_pgdata:/var/lib/postgresql/data
     healthcheck:

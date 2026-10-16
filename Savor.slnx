@@ -6,4 +6,8 @@
     <Project Path="src/Savor.Domain/Savor.Domain.csproj" />
     <Project Path="src/Savor.Infrastructure/Savor.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Savor.Api.Tests/Savor.Api.Tests.csproj" />
+    <Project Path="tests/Savor.Domain.Tests/Savor.Domain.Tests.csproj" />
+  </Folder>
 </Solution>
