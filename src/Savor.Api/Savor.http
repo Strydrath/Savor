@@ -1,0 +1,67 @@
+@baseUrl = http://localhost:5093
+
+### Register a user (stores an authentication cookie in compatible clients)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "cook@example.com",
+  "password": "StrongPassword123!"
+}
+
+### Log in
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "cook@example.com",
+  "password": "StrongPassword123!"
+}
+
+### Current user
+GET {{baseUrl}}/me
+
+### Create a private recipe
+POST {{baseUrl}}/recipes/mine/
+Content-Type: application/json
+
+{
+  "title": "My Garlic Soup",
+  "description": "A private recipe.",
+  "visibility": "Private",
+  "ingredients": [
+    {
+      "name": "garlic",
+      "quantity": 2,
+      "unit": "cloves"
+    }
+  ],
+  "tags": ["quick"]
+}
+
+### Log out
+POST {{baseUrl}}/auth/logout
+
+### Health
+GET {{baseUrl}}/health
+
+### OpenAPI (Development only)
+GET {{baseUrl}}/openapi/v1.json
+
+### List public recipes
+GET {{baseUrl}}/recipes/
+
+### Filter public recipes by tag
+GET {{baseUrl}}/recipes/?tag=quick
+
+### Filter public recipes by ingredient
+GET {{baseUrl}}/recipes/?ingredient=tomato&page=1&pageSize=20
+
+### Get the seeded public recipe
+GET {{baseUrl}}/recipes/11111111-1111-1111-1111-111111111111
+
+### Private recipes are not exposed
+GET {{baseUrl}}/recipes/22222222-2222-2222-2222-222222222222
+
+### Unknown recipes return 404
+GET {{baseUrl}}/recipes/00000000-0000-0000-0000-000000000000
