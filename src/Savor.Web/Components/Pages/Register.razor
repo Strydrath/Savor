@@ -1,0 +1,44 @@
+@page "/register"
+@inject SavorApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Register | Savor</PageTitle>
+
+<div class="auth-card">
+    <p class="eyebrow">Start cooking</p>
+    <h1>Create your Savor account</h1>
+    <EditForm Model="model" OnValidSubmit="SubmitRegistration">
+        <DataAnnotationsValidator />
+        <label>Email <InputText @bind-Value="model.Email" /></label>
+        <ValidationMessage For="() => model.Email" />
+        <label>Password <InputText type="password" @bind-Value="model.Password" /></label>
+        <ValidationMessage For="() => model.Password" />
+        @if (error is not null) { <p class="form-error">@error</p> }
+        <button type="submit">Register</button>
+    </EditForm>
+</div>
+
+@code {
+    private RegisterModel model = new();
+    private string? error;
+
+    private async Task SubmitRegistration()
+    {
+        var result = await Api.RegisterAsync(model.Email, model.Password);
+        if (result is null)
+        {
+            error = "Registration failed. Check your email and password.";
+            return;
+        }
+
+        Navigation.NavigateTo("/my-recipes");
+    }
+
+    private sealed class RegisterModel
+    {
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MinLength(8)]
+        public string Password { get; set; } = string.Empty;
+    }
+}

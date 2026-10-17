@@ -1,0 +1,40 @@
+@page "/recipes/{Id:guid}"
+@inject SavorApiClient Api
+
+<PageTitle>Recipe | Savor</PageTitle>
+
+@if (recipe is null)
+{
+    <p>Recipe not found.</p>
+}
+else
+{
+    <article class="recipe-detail">
+        <p class="eyebrow">Savor recipe</p>
+        <h1>@recipe.Title</h1>
+        <p class="recipe-detail__description">@recipe.Description</p>
+        <h2>Ingredients</h2>
+        <ul>
+            @foreach (var ingredient in recipe.Ingredients)
+            {
+                <li>@ingredient.Quantity @ingredient.Unit @ingredient.Name</li>
+            }
+        </ul>
+        <div class="tags">
+            @foreach (var tag in recipe.Tags)
+            {
+                <span>@tag</span>
+            }
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private RecipeResponse? recipe;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        recipe = await Api.GetRecipeAsync(Id);
+    }
+}

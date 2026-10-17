@@ -1,0 +1,51 @@
+@page "/recipes"
+@inject SavorApiClient Api
+
+<PageTitle>Recipes | Savor</PageTitle>
+
+<section class="hero">
+    <p class="eyebrow">Cook what you have</p>
+    <h1>Discover something delicious.</h1>
+    <p>Browse the public Savor recipe collection and find your next meal.</p>
+</section>
+
+<div class="filters">
+    <input @bind="tag" placeholder="Filter by tag" />
+    <input @bind="ingredient" placeholder="Filter by ingredient" />
+    <button @onclick="LoadRecipes">Search</button>
+</div>
+
+@if (recipes is null)
+{
+    <p>Loading recipes...</p>
+}
+else if (recipes.Items.Count == 0)
+{
+    <p>No recipes matched your filters.</p>
+}
+else
+{
+    <div class="recipe-grid">
+        @foreach (var recipe in recipes.Items)
+        {
+            <a class="recipe-card" href="@($"/recipes/{recipe.Id}")">
+                <span class="recipe-card__label">@string.Join(" · ", recipe.Tags)</span>
+                <h2>@recipe.Title</h2>
+                <p>@recipe.Description</p>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private RecipeListResponse? recipes;
+    private string? tag;
+    private string? ingredient;
+
+    protected override Task OnInitializedAsync() => LoadRecipes();
+
+    private async Task LoadRecipes()
+    {
+        recipes = await Api.ListRecipesAsync(tag, ingredient);
+    }
+}

@@ -1,0 +1,45 @@
+@page "/login"
+@inject SavorApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Log in | Savor</PageTitle>
+
+<div class="auth-card">
+    <p class="eyebrow">Welcome back</p>
+    <h1>Log in to Savor</h1>
+    <EditForm Model="model" OnValidSubmit="SubmitLogin">
+        <DataAnnotationsValidator />
+        <label>Email <InputText @bind-Value="model.Email" /></label>
+        <ValidationMessage For="() => model.Email" />
+        <label>Password <InputText type="password" @bind-Value="model.Password" /></label>
+        <ValidationMessage For="() => model.Password" />
+        @if (error is not null) { <p class="form-error">@error</p> }
+        <button type="submit">Log in</button>
+    </EditForm>
+    <p>New here? <a href="/register">Create an account</a>.</p>
+</div>
+
+@code {
+    private LoginModel model = new();
+    private string? error;
+
+    private async Task SubmitLogin()
+    {
+        var result = await Api.LoginAsync(model.Email, model.Password);
+        if (result is null)
+        {
+            error = "The email or password is incorrect.";
+            return;
+        }
+
+        Navigation.NavigateTo("/my-recipes");
+    }
+
+    private sealed class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}

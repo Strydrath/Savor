@@ -8,6 +8,7 @@ Recipe discovery and pantry-matching app for a small group of users. Browse publ
 - PostgreSQL + Entity Framework Core
 - Clean architecture: Domain, Application, Infrastructure, Contracts, Api
 - Blazor Web and .NET MAUI planned for later vertical slices
+- Blazor Web client for recipe discovery, authentication, and owned recipes
 
 ## Solution layout
 
@@ -64,6 +65,26 @@ dotnet run --project src/Savor.Api
 
 The HTTP launch profile uses `http://localhost:5093`. The HTTPS profile uses
 `https://localhost:7249` and `http://localhost:5093`.
+
+## Running the web UI
+
+Start the API first:
+
+```powershell
+dotnet run --project src/Savor.Api
+```
+
+Then start the Blazor web client in another PowerShell window:
+
+```powershell
+dotnet run --project src/Savor.Web
+```
+
+Open the URL printed for `Savor.Web`. The client is configured to call the API
+at `http://localhost:5093` through `SavorApi:BaseUrl` in
+[appsettings.json](src/Savor.Web/appsettings.json). The first UI slice includes
+public recipe browsing and filtering, recipe details, registration, login, and
+owned recipe create/update/delete screens.
 
 ## Configuration
 

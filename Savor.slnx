@@ -5,6 +5,7 @@
     <Project Path="src/Savor.Contracts/Savor.Contracts.csproj" />
     <Project Path="src/Savor.Domain/Savor.Domain.csproj" />
     <Project Path="src/Savor.Infrastructure/Savor.Infrastructure.csproj" />
+    <Project Path="src/Savor.Web/Savor.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Savor.Api.Tests/Savor.Api.Tests.csproj" />
