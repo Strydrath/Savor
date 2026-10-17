@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Savor.Api.Tests/Savor.Api.Tests.csproj" />
+    <Project Path="tests/Savor.Contracts.Tests/Savor.Contracts.Tests.csproj" />
     <Project Path="tests/Savor.Domain.Tests/Savor.Domain.Tests.csproj" />
   </Folder>
 </Solution>
