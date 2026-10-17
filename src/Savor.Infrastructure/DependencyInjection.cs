@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Savor.Application.Abstractions;
 using Savor.Infrastructure.Persistence;
 using Savor.Infrastructure.Recipes;
+using Savor.Infrastructure.Identity;
 
 namespace Savor.Infrastructure;
 
@@ -17,7 +18,10 @@ public static class DependencyInjection
 
         services.AddDbContext<SavorDbContext>(options =>
             options.UseNpgsql(connectionString));
+        services.AddIdentityCore<ApplicationUser>()
+            .AddEntityFrameworkStores<SavorDbContext>();
         services.AddScoped<IRecipeQueryService, RecipeQueryService>();
+        services.AddScoped<IRecipeCommandService, RecipeCommandService>();
 
         return services;
     }

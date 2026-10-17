@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using System.Security.Claims;
 using Savor.Application.Abstractions;
 using Savor.Contracts.Recipes;
 
@@ -45,6 +46,76 @@ public static class RecipeEndpoints
             .Produces<RecipeResponse>()
             .Produces(StatusCodes.Status404NotFound);
 
+        var ownedRecipes = endpoints.MapGroup("/recipes/mine")
+            .RequireAuthorization()
+            .WithTags("Recipes");
+
+        ownedRecipes.MapGet("/{id:guid}", async Task<Results<Ok<RecipeResponse>, NotFound>> (
+                Guid id,
+                ClaimsPrincipal user,
+                IRecipeCommandService service,
+                CancellationToken cancellationToken) =>
+        {
+            var recipe = await service.GetOwnedByIdAsync(GetUserId(user), id, cancellationToken);
+            return recipe is null ? TypedResults.NotFound() : TypedResults.Ok(recipe);
+        })
+            .WithName("GetOwnedRecipe")
+            .WithSummary("Get an owned recipe")
+            .Produces<RecipeResponse>()
+            .Produces(StatusCodes.Status404NotFound);
+
+        ownedRecipes.MapPost("/", async Task<Created<RecipeResponse>> (
+                CreateRecipeRequest request,
+                ClaimsPrincipal user,
+                IRecipeCommandService service,
+                CancellationToken cancellationToken) =>
+        {
+            var recipe = await service.CreateAsync(GetUserId(user), request, cancellationToken);
+            return TypedResults.Created($"/recipes/{recipe.Id}", recipe);
+        })
+            .WithName("CreateRecipe")
+            .WithSummary("Create a recipe")
+            .Produces<RecipeResponse>(StatusCodes.Status201Created);
+
+        ownedRecipes.MapPut("/{id:guid}", async Task<Results<Ok<RecipeResponse>, NotFound>> (
+                Guid id,
+                UpdateRecipeRequest request,
+                ClaimsPrincipal user,
+                IRecipeCommandService service,
+                CancellationToken cancellationToken) =>
+        {
+            var recipe = await service.UpdateAsync(GetUserId(user), id, request, cancellationToken);
+            return recipe is null ? TypedResults.NotFound() : TypedResults.Ok(recipe);
+        })
+            .WithName("UpdateRecipe")
+            .WithSummary("Update an owned recipe")
+            .Produces<RecipeResponse>()
+            .Produces(StatusCodes.Status404NotFound);
+
+        ownedRecipes.MapDelete("/{id:guid}", async Task<Results<NoContent, NotFound>> (
+                Guid id,
+                ClaimsPrincipal user,
+                IRecipeCommandService service,
+                CancellationToken cancellationToken) =>
+        {
+            var deleted = await service.DeleteAsync(GetUserId(user), id, cancellationToken);
+            return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
+        })
+            .WithName("DeleteRecipe")
+            .WithSummary("Delete an owned recipe")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound);
+
         return endpoints;
+    }
+
+    private static Guid GetUserId(ClaimsPrincipal user)
+    {
+        var value = user.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? user.FindFirstValue("sub");
+
+        return Guid.TryParse(value, out var id)
+            ? id
+            : throw new InvalidOperationException("The authenticated user ID is invalid.");
     }
 }

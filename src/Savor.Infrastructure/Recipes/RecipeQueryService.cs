@@ -3,6 +3,7 @@ using Savor.Application.Abstractions;
 using Savor.Contracts.Recipes;
 using Savor.Domain.Recipes;
 using Savor.Infrastructure.Persistence;
+using DomainRecipeVisibility = Savor.Domain.Recipes.RecipeVisibility;
 
 namespace Savor.Infrastructure.Recipes;
 
@@ -17,7 +18,7 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
     {
         IQueryable<Recipe> query = dbContext.Recipes
             .AsNoTracking()
-            .Where(recipe => recipe.Visibility == RecipeVisibility.Public);
+            .Where(recipe => recipe.Visibility == DomainRecipeVisibility.Public);
 
         if (!string.IsNullOrWhiteSpace(tag))
         {
@@ -60,7 +61,7 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
     {
         var recipe = await dbContext.Recipes
             .AsNoTracking()
-            .Where(item => item.Id == id && item.Visibility == RecipeVisibility.Public)
+            .Where(item => item.Id == id && item.Visibility == DomainRecipeVisibility.Public)
             .Include(item => item.Ingredients)
             .Include(item => item.Tags)
             .SingleOrDefaultAsync(cancellationToken);

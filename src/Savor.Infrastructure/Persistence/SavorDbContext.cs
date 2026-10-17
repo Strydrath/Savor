@@ -1,9 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Savor.Domain.Recipes;
+using Savor.Infrastructure.Identity;
 
 namespace Savor.Infrastructure.Persistence;
 
-public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options) : DbContext(options)
+public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<Recipe> Recipes => Set<Recipe>();
 

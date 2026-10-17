@@ -125,6 +125,54 @@ The same requests are available in
 [Savor.http](src/Savor.Api/Savor.http) and can be run from the VS Code REST
 Client extension or another `.http`-file compatible client.
 
+### Authentication and owned recipes
+
+The API uses ASP.NET Core Identity with cookie authentication for the current
+development slice. Register and log in first:
+
+```powershell
+Invoke-WebRequest `
+  http://localhost:5093/auth/register `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"email":"cook@example.com","password":"StrongPassword123!"}' `
+  -SessionVariable session
+
+Invoke-WebRequest `
+  http://localhost:5093/auth/login `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"email":"cook@example.com","password":"StrongPassword123!"}' `
+  -WebSession $session
+```
+
+Use the same session to call the authenticated endpoints:
+
+```powershell
+Invoke-RestMethod http://localhost:5093/me -WebSession $session
+
+$recipe = Invoke-RestMethod `
+  http://localhost:5093/recipes/mine/ `
+  -Method Post `
+  -ContentType "application/json" `
+  -WebSession $session `
+  -Body '{"title":"My Garlic Soup","description":"A private recipe.","visibility":"Private","ingredients":[{"name":"garlic","quantity":2,"unit":"cloves"}],"tags":["quick"]}'
+```
+
+Owned recipe endpoints:
+
+```text
+GET    /recipes/mine/{id}
+POST   /recipes/mine/
+PUT    /recipes/mine/{id}
+DELETE /recipes/mine/{id}
+POST   /auth/logout
+GET    /me
+```
+
+Anonymous users can still browse public recipes. Private recipes are only
+returned through the owner-scoped endpoint for the authenticated owner.
+
 ### Build and tests
 
 Build the solution:
@@ -141,6 +189,31 @@ dotnet test Savor.slnx --configuration Release
 
 The repository includes domain tests and API endpoint tests. The API tests use
 a deterministic query-service test double, so they do not require PostgreSQL.
+
+Run the end-to-end API smoke test from the repository root after starting the
+database, applying migrations, and running the API:
+
+```powershell
+.\scripts\test-api.ps1
+```
+
+Use a different API URL when needed:
+
+```powershell
+.\scripts\test-api.ps1 -BaseUrl "http://localhost:5093"
+```
+
+The script creates a timestamped test user, exercises public discovery,
+registration, login-session behavior, `/me`, private recipe creation, update,
+publication, and logout. It reports expected non-success responses such as
+anonymous `401 Unauthorized` as passing checks. Add `-KeepUser` to retain the
+created test data for inspection.
+
+## Linux server deployment
+
+For a production-style Linux deployment using Docker PostgreSQL, systemd, and
+an optional Nginx reverse proxy, see
+[docs/linux-server-setup.md](docs/linux-server-setup.md).
 
 ## Status
 

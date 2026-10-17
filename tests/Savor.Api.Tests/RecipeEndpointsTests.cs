@@ -72,6 +72,28 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CurrentUser_RequiresAuthentication()
+    {
+        var response = await _client.GetAsync("/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateRecipe_RequiresAuthentication()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/recipes/mine/",
+            new
+            {
+                title = "Test recipe",
+                description = "Test description"
+            });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
 
 public sealed class SavorApiFactory : WebApplicationFactory<Program>

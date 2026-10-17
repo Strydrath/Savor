@@ -35,4 +35,13 @@ public sealed class Recipe : Entity
     {
         _tags.Add(new RecipeTag(Id, name));
     }
+
+    public void Update(string title, string description, RecipeVisibility visibility)
+    {
+        Title = title;
+        Description = description;
+        Visibility = visibility;
+        _ingredients.Clear();
+        _tags.Clear();
+    }
 }
