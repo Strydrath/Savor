@@ -6,4 +6,6 @@ public sealed record RecipeSummaryResponse(
     string Slug,
     string Title,
     string Description,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    int MatchedIngredientCount,
+    int TotalIngredientCount);

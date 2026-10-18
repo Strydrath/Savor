@@ -7,11 +7,15 @@ public interface IRecipeQueryService
     Task<RecipeListResponse> ListPublicAsync(
         IReadOnlyList<string> tags,
         IReadOnlyList<string> ingredients,
+        IngredientMatchMode ingredientMatchMode,
         int page,
         int pageSize,
         CancellationToken cancellationToken);
 
-    Task<RecipeResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken);
+    Task<RecipeResponse?> GetPublicBySlugAsync(
+        string slug,
+        IReadOnlyList<string> ingredients,
+        CancellationToken cancellationToken);
 
     Task<RecipeResponse?> GetPublicByHistoricalSlugAsync(
         string slug,

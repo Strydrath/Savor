@@ -1,4 +1,5 @@
 @page "/recipes/{Slug}"
+@using Microsoft.AspNetCore.Components
 @inject SavorApiClient Api
 
 <PageTitle>Recipe | Savor</PageTitle>
@@ -13,6 +14,13 @@ else
         <p class="eyebrow">Savor recipe</p>
         <h1>@recipe.Title</h1>
         <p class="recipe-detail__description">@recipe.Description</p>
+        @if (PantryIngredients.Length > 0)
+        {
+            <p class="recipe-match">
+                @recipe.MatchedIngredientCount of @recipe.Ingredients.Count ingredients available
+                (@recipe.MissingIngredients.Count missing)
+            </p>
+        }
         <h2>Ingredients</h2>
         <ul>
             @foreach (var ingredient in recipe.Ingredients)
@@ -20,6 +28,16 @@ else
                 <li>@ingredient.Quantity.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture) @ingredient.Unit @ingredient.Name</li>
             }
         </ul>
+        @if (PantryIngredients.Length > 0 && recipe.MissingIngredients.Count > 0)
+        {
+            <h2>Missing ingredients</h2>
+            <ul>
+                @foreach (var ingredient in recipe.MissingIngredients)
+                {
+                    <li>@ingredient</li>
+                }
+            </ul>
+        }
         <h2>Method</h2>
         <ol>
             @foreach (var step in recipe.Steps)
@@ -38,10 +56,12 @@ else
 
 @code {
     [Parameter] public string Slug { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name = "ingredient")]
+    public string[] PantryIngredients { get; set; } = [];
     private RecipeResponse? recipe;
 
     protected override async Task OnParametersSetAsync()
     {
-        recipe = await Api.GetRecipeAsync(Slug);
+        recipe = await Api.GetRecipeAsync(Slug, PantryIngredients);
     }
 }

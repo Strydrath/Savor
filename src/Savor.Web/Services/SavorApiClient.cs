@@ -11,6 +11,7 @@ public sealed class SavorApiClient(IConfiguration configuration)
     public async Task<RecipeListResponse?> ListRecipesAsync(
         string? tags = null,
         string? ingredients = null,
+        string ingredientMode = "Any",
         CancellationToken cancellationToken = default)
     {
         var query = new List<string>();
@@ -29,14 +30,31 @@ public sealed class SavorApiClient(IConfiguration configuration)
             {
                 query.Add($"ingredient={Uri.EscapeDataString(ingredient)}");
             }
+            if (!string.IsNullOrWhiteSpace(ingredientMode))
+            {
+                query.Add($"ingredientMode={Uri.EscapeDataString(ingredientMode)}");
+            }
         }
 
         var path = "/recipes/" + (query.Count == 0 ? string.Empty : $"?{string.Join("&", query)}");
         return await _httpClient.GetFromJsonAsync<RecipeListResponse>(path, cancellationToken);
     }
 
-    public Task<RecipeResponse?> GetRecipeAsync(string slug, CancellationToken cancellationToken = default) =>
-        GetOrDefaultAsync<RecipeResponse>($"/recipes/{Uri.EscapeDataString(slug)}", cancellationToken);
+    public Task<RecipeResponse?> GetRecipeAsync(
+        string slug,
+        IReadOnlyList<string>? ingredients = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = ingredients is null
+            ? []
+            : ingredients
+                .Where(ingredient => !string.IsNullOrWhiteSpace(ingredient))
+                .Select(ingredient => $"ingredient={Uri.EscapeDataString(ingredient)}")
+                .ToArray();
+        var path = $"/recipes/{Uri.EscapeDataString(slug)}"
+            + (query.Length == 0 ? string.Empty : $"?{string.Join("&", query)}");
+        return GetOrDefaultAsync<RecipeResponse>(path, cancellationToken);
+    }
 
     public Task<IReadOnlyList<string>?> ListRecipeTagsAsync(
         CancellationToken cancellationToken = default) =>
