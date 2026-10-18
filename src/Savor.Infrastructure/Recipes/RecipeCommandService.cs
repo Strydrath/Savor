@@ -7,7 +7,9 @@ using DomainRecipeVisibility = Savor.Domain.Recipes.RecipeVisibility;
 
 namespace Savor.Infrastructure.Recipes;
 
-internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCommandService
+internal sealed class RecipeCommandService(
+    SavorDbContext dbContext,
+    RecipeSlugGenerator slugGenerator) : IRecipeCommandService
 {
     public async Task<RecipeResponse> CreateAsync(
         Guid ownerId,
@@ -19,6 +21,7 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
             request.Title.Trim(),
             request.Description.Trim(),
             (DomainRecipeVisibility)(int)request.Visibility);
+        recipe.SetSlug(await slugGenerator.GenerateAsync(request.Title, null, cancellationToken));
         AddRequestItems(recipe, request.Ingredients, request.Tags, request.Steps);
         dbContext.Recipes.Add(recipe);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -46,6 +49,12 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
             request.Title.Trim(),
             request.Description.Trim(),
             (DomainRecipeVisibility)(int)request.Visibility);
+        var newSlug = await slugGenerator.GenerateAsync(request.Title, recipe.Id, cancellationToken);
+        if (!string.Equals(recipe.Slug, newSlug, StringComparison.Ordinal))
+        {
+            dbContext.RecipeSlugHistory.Add(new RecipeSlugHistory(recipe.Slug, recipe.Id));
+            recipe.SetSlug(newSlug);
+        }
         AddRequestItems(recipe, request.Ingredients, request.Tags, request.Steps);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Map(recipe);
@@ -109,6 +118,7 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
     private static RecipeResponse Map(Recipe recipe) =>
         new(
             recipe.Id,
+            recipe.Slug,
             recipe.Title,
             recipe.Description,
             recipe.Ingredients

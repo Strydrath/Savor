@@ -11,6 +11,10 @@ public interface IRecipeQueryService
         int pageSize,
         CancellationToken cancellationToken);
 
-    Task<RecipeResponse?> GetPublicByIdAsync(Guid id, CancellationToken cancellationToken);
+    Task<RecipeResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken);
+
+    Task<RecipeResponse?> GetPublicByHistoricalSlugAsync(
+        string slug,
+        CancellationToken cancellationToken);
     Task<IReadOnlyList<string>> ListPublicTagsAsync(CancellationToken cancellationToken);
 }

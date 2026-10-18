@@ -89,6 +89,7 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
         var items = recipes
             .Select(recipe => new RecipeSummaryResponse(
                 recipe.Id,
+                recipe.Slug,
                 recipe.Title,
                 recipe.Description,
                 recipe.Tags.Select(tagItem => tagItem.Name).OrderBy(name => name).ToArray()))
@@ -102,11 +103,13 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
             (int)Math.Ceiling(totalCount / (double)pageSize));
     }
 
-    public async Task<RecipeResponse?> GetPublicByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<RecipeResponse?> GetPublicBySlugAsync(
+        string slug,
+        CancellationToken cancellationToken)
     {
         var recipe = await dbContext.Recipes
             .AsNoTracking()
-            .Where(item => item.Id == id && item.Visibility == DomainRecipeVisibility.Public)
+            .Where(item => item.Slug == slug && item.Visibility == DomainRecipeVisibility.Public)
             .Include(item => item.Ingredients)
             .Include(item => item.Tags)
             .Include(item => item.Steps)
@@ -116,6 +119,50 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
             ? null
             : new RecipeResponse(
                 recipe.Id,
+                recipe.Slug,
+                recipe.Title,
+                recipe.Description,
+                recipe.Ingredients
+                    .OrderBy(ingredient => ingredient.Name)
+                    .Select(ingredient => new RecipeIngredientResponse(
+                        ingredient.Name,
+                        ingredient.Quantity,
+                        ingredient.Unit))
+                    .ToArray(),
+                recipe.Tags.Select(tag => tag.Name).OrderBy(name => name).ToArray(),
+                recipe.Steps
+                    .OrderBy(step => step.StepNumber)
+                    .Select(step => new RecipeStepResponse(step.StepNumber, step.Instruction))
+                    .ToArray());
+    }
+
+    public async Task<RecipeResponse?> GetPublicByHistoricalSlugAsync(
+        string slug,
+        CancellationToken cancellationToken)
+    {
+        var recipeId = await dbContext.RecipeSlugHistory
+            .Where(history => history.Slug == slug)
+            .Select(history => (Guid?)history.RecipeId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (!recipeId.HasValue)
+        {
+            return null;
+        }
+
+        var recipe = await dbContext.Recipes
+            .AsNoTracking()
+            .Where(item => item.Id == recipeId.Value && item.Visibility == DomainRecipeVisibility.Public)
+            .Include(item => item.Ingredients)
+            .Include(item => item.Tags)
+            .Include(item => item.Steps)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return recipe is null
+            ? null
+            : new RecipeResponse(
+                recipe.Id,
+                recipe.Slug,
                 recipe.Title,
                 recipe.Description,
                 recipe.Ingredients

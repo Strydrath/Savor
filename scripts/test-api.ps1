@@ -103,9 +103,9 @@ try {
     $filteredRecipes = Invoke-Api -Path "/recipes/?tag=quick&ingredient=tomato&page=1&pageSize=20"
     Assert-Condition ($filteredRecipes.totalCount -ge 1) "The seeded filtered recipe should be returned."
 
-    $publicRecipeId = $recipes.items[0].id
-    $publicRecipe = Invoke-Api -Path "/recipes/$publicRecipeId"
-    Assert-Condition ($publicRecipe.id -eq $publicRecipeId) "Public recipe detail ID should match."
+    $publicRecipeSlug = $recipes.items[0].slug
+    $publicRecipe = Invoke-Api -Path "/recipes/$publicRecipeSlug"
+    Assert-Condition ($publicRecipe.slug -eq $publicRecipeSlug) "Public recipe detail slug should match."
 
     Invoke-Api -Path "/me" -ExpectedStatus @(401) | Out-Null
 
@@ -159,7 +159,7 @@ try {
     Assert-Condition ($updatedRecipe.title -eq "Updated Savor Smoke Test Recipe") `
         "Updated recipe title should match."
 
-    $publicUpdatedRecipe = Invoke-Api -Path "/recipes/$recipeId"
+    $publicUpdatedRecipe = Invoke-Api -Path "/recipes/$($updatedRecipe.slug)"
     Assert-Condition ($publicUpdatedRecipe.id -eq $recipeId) "Published recipe should be publicly readable."
 
     Invoke-Api -Path "/auth/logout" -Method Post -ExpectedStatus @(204) | Out-Null
