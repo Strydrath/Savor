@@ -183,6 +183,22 @@ The same requests are available in
 [Savor.http](src/Savor.Api/Savor.http) and can be run from the VS Code REST
 Client extension or another `.http`-file compatible client.
 
+### Integration tests
+
+The integration test project uses a real PostgreSQL database. Start the
+development database first, set `ConnectionStrings__Database`, and run:
+
+```powershell
+dotnet test tests/Savor.IntegrationTests/Savor.IntegrationTests.csproj `
+  --configuration Release
+```
+
+The fixture creates a unique temporary database, applies all migrations,
+executes the tests through the real API and Identity services, and drops the
+temporary database afterward. The connection user must have permission to
+create and drop databases. GitHub Actions starts a PostgreSQL service for this
+test project.
+
 ### Authentication and owned recipes
 
 The API uses ASP.NET Core Identity with cookie authentication for the current
@@ -245,8 +261,10 @@ Run the test suite:
 dotnet test Savor.slnx --configuration Release
 ```
 
-The repository includes domain tests and API endpoint tests. The API tests use
-a deterministic query-service test double, so they do not require PostgreSQL.
+The repository includes domain, contract, API endpoint, and PostgreSQL-backed
+integration tests. The fast API tests use a deterministic query-service test
+double; the separate integration project exercises the real database and
+Identity stack.
 
 Run the end-to-end API smoke test from the repository root after starting the
 database, applying migrations, and running the API:
