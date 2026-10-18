@@ -1,0 +1,104 @@
+@page "/recipes"
+@inject SavorApiClient Api
+
+<PageTitle>Recipes | Savor</PageTitle>
+
+<section class="hero">
+    <p class="eyebrow">Cook what you have</p>
+    <h1>Discover something delicious.</h1>
+    <p>Browse the public Savor recipe collection and find your next meal.</p>
+</section>
+
+<div class="filters">
+    <div class="filter-picker">
+        <input @bind="tagSearch"
+               @bind:event="oninput"
+               @onfocus="ShowTagSuggestions"
+               @onblur="HideTagSuggestions"
+               placeholder="Filter by tags" />
+        @if (tagFieldActive && tagSuggestions.Count > 0)
+        {
+            <div class="suggestions">
+                @foreach (var tag in tagSuggestions)
+                {
+                    <button type="button"
+                            class="suggestion"
+                            @onmousedown:preventDefault
+                            @onclick="() => ToggleTag(tag)">
+                        @tag
+                    </button>
+                }
+            </div>
+        }
+        <div class="tags">
+            @foreach (var selectedTag in selectedTags)
+            {
+                <span>@selectedTag <button type="button" class="tag-remove" @onclick="() => ToggleTag(selectedTag)">×</button></span>
+            }
+        </div>
+    </div>
+    <input @bind="ingredients" placeholder="Ingredients, separated by commas" />
+    <small>Recipes using the most of your ingredients appear first.</small>
+    <button @onclick="LoadRecipes">Search</button>
+</div>
+
+@if (recipes is null)
+{
+    <p>Loading recipes...</p>
+}
+else if (recipes.Items.Count == 0)
+{
+    <p>No recipes matched your filters.</p>
+}
+else
+{
+    <div class="recipe-grid">
+        @foreach (var recipe in recipes.Items)
+        {
+            <a class="recipe-card" href="@($"/recipes/{recipe.Id}")">
+                <span class="recipe-card__label">@string.Join(" · ", recipe.Tags)</span>
+                <h2>@recipe.Title</h2>
+                <p>@recipe.Description</p>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private RecipeListResponse? recipes;
+    private string? tagSearch;
+    private string? ingredients;
+    private bool tagFieldActive;
+    private IReadOnlyList<string> availableTags = [];
+    private readonly List<string> selectedTags = [];
+    private IReadOnlyList<string> tagSuggestions => availableTags
+        .Where(tag => !selectedTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        .Where(tag => string.IsNullOrWhiteSpace(tagSearch)
+            || tag.Contains(tagSearch.Trim(), StringComparison.OrdinalIgnoreCase))
+        .Take(string.IsNullOrWhiteSpace(tagSearch) ? 3 : 10)
+        .ToArray();
+
+    protected override async Task OnInitializedAsync()
+    {
+        availableTags = await Api.ListRecipeTagsAsync() ?? [];
+        await LoadRecipes();
+    }
+
+    private async Task LoadRecipes()
+    {
+        recipes = await Api.ListRecipesAsync(string.Join(",", selectedTags), ingredients);
+    }
+
+    private void ToggleTag(string tag)
+    {
+        if (!selectedTags.Remove(tag))
+        {
+            selectedTags.Add(tag);
+        }
+
+        tagSearch = string.Empty;
+    }
+
+    private void ShowTagSuggestions() => tagFieldActive = true;
+    private void HideTagSuggestions() => tagFieldActive = false;
+}

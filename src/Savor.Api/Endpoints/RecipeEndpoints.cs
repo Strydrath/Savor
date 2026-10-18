@@ -13,22 +13,30 @@ public static class RecipeEndpoints
             .WithTags("Recipes");
 
         recipes.MapGet("/", async Task<Ok<RecipeListResponse>> (
-                string? tag,
-                string? ingredient,
+                string[]? tag,
+                string[]? ingredient,
                 int? page,
                 int? pageSize,
                 IRecipeQueryService service,
                 CancellationToken cancellationToken) =>
             TypedResults.Ok(await service.ListPublicAsync(
-                tag,
-                ingredient,
+                tag ?? [],
+                ingredient ?? [],
                 Math.Max(page ?? 1, 1),
                 Math.Clamp(pageSize ?? 20, 1, 100),
                 cancellationToken)))
             .WithName("ListPublicRecipes")
             .WithSummary("List public recipes")
-            .WithDescription("Returns public recipes with optional tag and ingredient filters.")
+            .WithDescription("Returns public recipes with optional repeated tag and ingredient filters. Results must match all selected tags and are ranked by the number of requested ingredients they contain.")
             .Produces<RecipeListResponse>();
+
+        recipes.MapGet("/tags", async Task<Ok<IReadOnlyList<string>>> (
+                IRecipeQueryService service,
+                CancellationToken cancellationToken) =>
+            TypedResults.Ok(await service.ListPublicTagsAsync(cancellationToken)))
+            .WithName("ListRecipeTags")
+            .WithSummary("List existing public recipe tags")
+            .Produces<IReadOnlyList<string>>();
 
         recipes.MapGet("/{id:guid}", async Task<Results<Ok<RecipeResponse>, NotFound>> (
                 Guid id,

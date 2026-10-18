@@ -34,7 +34,8 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
     [Fact]
     public async Task ListRecipes_ForwardsFiltersAndPagination()
     {
-        var response = await _client.GetAsync("/recipes/?tag=quick&ingredient=tomato&page=2&pageSize=5");
+        var response = await _client.GetAsync(
+            "/recipes/?tag=quick&ingredient=tomato&ingredient=garlic&page=2&pageSize=5");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<RecipeListResponse>();
@@ -42,6 +43,32 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
         Assert.NotNull(result);
         Assert.Equal(2, result.Page);
         Assert.Equal(5, result.PageSize);
+    }
+
+    [Fact]
+    public async Task ListRecipes_SupportsMultipleIngredients()
+    {
+        var response = await _client.GetAsync(
+            "/recipes/?ingredient=tomato&ingredient=garlic");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<RecipeListResponse>();
+
+        Assert.NotNull(result);
+        Assert.Equal("Creamy Tomato Pasta", result.Items[0].Title);
+        Assert.Equal("Garden Omelette", result.Items[1].Title);
+    }
+
+    [Fact]
+    public async Task ListRecipeTags_ReturnsExistingTags()
+    {
+        var response = await _client.GetAsync("/recipes/tags");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<string[]>();
+
+        Assert.NotNull(result);
+        Assert.Contains("quick", result);
     }
 
     [Fact]
@@ -121,22 +148,46 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
         "Creamy Tomato Pasta",
         "A quick pasta with tomato, garlic, and cream.",
         [new RecipeIngredientResponse("tomato", 400, "g")],
-        ["quick", "pasta"]);
+        ["quick", "pasta"],
+        [new RecipeStepResponse(1, "Cook the pasta.")]);
+
+    private static readonly RecipeSummaryResponse PartialMatchRecipe = new(
+        Guid.Parse("33333333-3333-3333-3333-333333333333"),
+        "Garden Omelette",
+        "A fluffy omelette with tomato.",
+        ["breakfast"]);
 
     public Task<RecipeListResponse> ListPublicAsync(
-        string? tag,
-        string? ingredient,
+        IReadOnlyList<string> tags,
+        IReadOnlyList<string> ingredients,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var matchesFilter = (string.IsNullOrWhiteSpace(tag)
-                || string.Equals(tag, "quick", StringComparison.OrdinalIgnoreCase))
-            && (string.IsNullOrWhiteSpace(ingredient)
-                || string.Equals(ingredient, "tomato", StringComparison.OrdinalIgnoreCase));
+        var matchesFilter = tags.All(tag =>
+                string.Equals(tag, "quick", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(tag, "pasta", StringComparison.OrdinalIgnoreCase))
+            && ingredients.All(ingredient =>
+                string.Equals(ingredient, "tomato", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(ingredient, "garlic", StringComparison.OrdinalIgnoreCase));
         if (!matchesFilter)
         {
             return Task.FromResult(new RecipeListResponse([], page, pageSize, 0, 0));
+        }
+
+        if (ingredients.Count > 1)
+        {
+            var rankedItems = new RecipeSummaryResponse(
+                PublicRecipe.Id,
+                PublicRecipe.Title,
+                PublicRecipe.Description,
+                PublicRecipe.Tags);
+            return Task.FromResult(new RecipeListResponse(
+                [rankedItems, PartialMatchRecipe],
+                page,
+                pageSize,
+                2,
+                1));
         }
 
         var item = new RecipeSummaryResponse(
@@ -153,6 +204,9 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
         return Task.FromResult<RecipeResponse?>(
             id == TestData.PublicRecipeId ? PublicRecipe : null);
     }
+
+    public Task<IReadOnlyList<string>> ListPublicTagsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<string>>(["pasta", "quick"]);
 }
 
 internal static class TestData

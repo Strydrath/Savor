@@ -8,6 +8,7 @@ Recipe discovery and pantry-matching app for a small group of users. Browse publ
 - PostgreSQL + Entity Framework Core
 - Clean architecture: Domain, Application, Infrastructure, Contracts, Api
 - Blazor Web and .NET MAUI planned for later vertical slices
+- Blazor Web client for recipe discovery, authentication, and owned recipes
 
 ## Solution layout
 
@@ -65,6 +66,26 @@ dotnet run --project src/Savor.Api
 The HTTP launch profile uses `http://localhost:5093`. The HTTPS profile uses
 `https://localhost:7249` and `http://localhost:5093`.
 
+## Running the web UI
+
+Start the API first:
+
+```powershell
+dotnet run --project src/Savor.Api
+```
+
+Then start the Blazor web client in another PowerShell window:
+
+```powershell
+dotnet run --project src/Savor.Web
+```
+
+Open the URL printed for `Savor.Web`. The client is configured to call the API
+at `http://localhost:5093` through `SavorApi:BaseUrl` in
+[appsettings.json](src/Savor.Web/appsettings.json). The first UI slice includes
+public recipe browsing and filtering, recipe details, registration, login, and
+owned recipe create/update/delete screens.
+
 ## Configuration
 
 Connection string key: `ConnectionStrings:Database`.
@@ -100,6 +121,25 @@ Filter by tag or ingredient and paginate the result:
 ```powershell
 Invoke-RestMethod 'http://localhost:5093/recipes/?tag=quick'
 Invoke-RestMethod 'http://localhost:5093/recipes/?ingredient=tomato&page=1&pageSize=20'
+```
+
+Search with multiple ingredients by separating them with commas in the web UI,
+or by repeating the `ingredient` query parameter in API requests:
+
+```powershell
+Invoke-RestMethod 'http://localhost:5093/recipes/?ingredient=tomato&ingredient=garlic'
+```
+
+Recipes containing all requested ingredients appear first, followed by recipes
+containing fewer of the requested ingredients. Results containing at least one
+requested ingredient are included.
+
+Recipe tags can be selected from the first three most-used public tags, or
+searched by typing. Multiple tags can be selected in the web UI and sent to
+the API by repeating the `tag` query parameter:
+
+```powershell
+Invoke-RestMethod 'http://localhost:5093/recipes/?tag=quick&tag=pasta'
 ```
 
 Get the seeded public recipe:

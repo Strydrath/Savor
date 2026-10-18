@@ -36,7 +36,11 @@ Content-Type: application/json
       "unit": "cloves"
     }
   ],
-  "tags": ["quick"]
+  "tags": ["quick"],
+  "steps": [
+    { "instruction": "Saute the garlic." },
+    { "instruction": "Add the remaining ingredients and simmer." }
+  ]
 }
 
 ### Log out

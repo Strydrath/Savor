@@ -19,7 +19,7 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
             request.Title.Trim(),
             request.Description.Trim(),
             (DomainRecipeVisibility)(int)request.Visibility);
-        AddRequestItems(recipe, request.Ingredients, request.Tags);
+        AddRequestItems(recipe, request.Ingredients, request.Tags, request.Steps);
         dbContext.Recipes.Add(recipe);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Map(recipe);
@@ -34,6 +34,7 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
         var recipe = await dbContext.Recipes
             .Include(item => item.Ingredients)
             .Include(item => item.Tags)
+            .Include(item => item.Steps)
             .SingleOrDefaultAsync(item => item.Id == id && item.OwnerId == ownerId, cancellationToken);
 
         if (recipe is null)
@@ -45,7 +46,7 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
             request.Title.Trim(),
             request.Description.Trim(),
             (DomainRecipeVisibility)(int)request.Visibility);
-        AddRequestItems(recipe, request.Ingredients, request.Tags);
+        AddRequestItems(recipe, request.Ingredients, request.Tags, request.Steps);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Map(recipe);
     }
@@ -74,6 +75,7 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
             .AsNoTracking()
             .Include(item => item.Ingredients)
             .Include(item => item.Tags)
+            .Include(item => item.Steps)
             .SingleOrDefaultAsync(
                 item => item.Id == id && item.OwnerId == ownerId,
                 cancellationToken);
@@ -84,7 +86,8 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
     private static void AddRequestItems(
         Recipe recipe,
         IEnumerable<RecipeIngredientRequest> ingredients,
-        IEnumerable<string> tags)
+        IEnumerable<string> tags,
+        IEnumerable<RecipeStepRequest> steps)
     {
         foreach (var ingredient in ingredients)
         {
@@ -94,6 +97,12 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
         foreach (var tag in tags.Where(tag => !string.IsNullOrWhiteSpace(tag)))
         {
             recipe.AddTag(tag.Trim());
+        }
+
+        var stepNumber = 1;
+        foreach (var step in steps.Where(step => !string.IsNullOrWhiteSpace(step.Instruction)))
+        {
+            recipe.AddStep(stepNumber++, step.Instruction.Trim());
         }
     }
 
@@ -106,5 +115,9 @@ internal sealed class RecipeCommandService(SavorDbContext dbContext) : IRecipeCo
                 .OrderBy(item => item.Name)
                 .Select(item => new RecipeIngredientResponse(item.Name, item.Quantity, item.Unit))
                 .ToArray(),
-            recipe.Tags.Select(item => item.Name).OrderBy(name => name).ToArray());
+            recipe.Tags.Select(item => item.Name).OrderBy(name => name).ToArray(),
+            recipe.Steps
+                .OrderBy(item => item.StepNumber)
+                .Select(item => new RecipeStepResponse(item.StepNumber, item.Instruction))
+                .ToArray());
 }

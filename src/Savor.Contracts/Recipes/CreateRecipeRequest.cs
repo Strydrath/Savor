@@ -15,4 +15,6 @@ public sealed record CreateRecipeRequest
     public IReadOnlyList<RecipeIngredientRequest> Ingredients { get; init; } = [];
 
     public IReadOnlyList<string> Tags { get; init; } = [];
+
+    public IReadOnlyList<RecipeStepRequest> Steps { get; init; } = [];
 }
