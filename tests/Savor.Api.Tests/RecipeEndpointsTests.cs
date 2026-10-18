@@ -15,7 +15,10 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
 
     public RecipeEndpointsTests(SavorApiFactory factory)
     {
-        _client = factory.CreateClient();
+        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
     }
 
     [Fact]
@@ -74,7 +77,7 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
     [Fact]
     public async Task GetRecipe_ReturnsPublicRecipeDetails()
     {
-        var response = await _client.GetAsync($"/recipes/{TestData.PublicRecipeId}");
+        var response = await _client.GetAsync("/recipes/creamy-tomato-pasta");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<RecipeResponse>();
@@ -87,15 +90,24 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
     [Fact]
     public async Task GetRecipe_DoesNotExposePrivateRecipe()
     {
-        var response = await _client.GetAsync($"/recipes/{TestData.PrivateRecipeId}");
+        var response = await _client.GetAsync("/recipes/family-sunday-stew");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
+    public async Task GetRecipe_RedirectsHistoricalSlug()
+    {
+        var response = await _client.GetAsync("/recipes/old-creamy-tomato-pasta");
+
+        Assert.Equal(HttpStatusCode.PermanentRedirect, response.StatusCode);
+        Assert.Equal("/recipes/creamy-tomato-pasta", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
     public async Task GetRecipe_ReturnsNotFoundForUnknownRecipe()
     {
-        var response = await _client.GetAsync($"/recipes/{Guid.Empty}");
+        var response = await _client.GetAsync("/recipes/does-not-exist");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -145,6 +157,7 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
 {
     private static readonly RecipeResponse PublicRecipe = new(
         TestData.PublicRecipeId,
+        "creamy-tomato-pasta",
         "Creamy Tomato Pasta",
         "A quick pasta with tomato, garlic, and cream.",
         [new RecipeIngredientResponse("tomato", 400, "g")],
@@ -153,6 +166,7 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
 
     private static readonly RecipeSummaryResponse PartialMatchRecipe = new(
         Guid.Parse("33333333-3333-3333-3333-333333333333"),
+        "garden-omelette",
         "Garden Omelette",
         "A fluffy omelette with tomato.",
         ["breakfast"]);
@@ -179,6 +193,7 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
         {
             var rankedItems = new RecipeSummaryResponse(
                 PublicRecipe.Id,
+                PublicRecipe.Slug,
                 PublicRecipe.Title,
                 PublicRecipe.Description,
                 PublicRecipe.Tags);
@@ -192,6 +207,7 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
 
         var item = new RecipeSummaryResponse(
             PublicRecipe.Id,
+            PublicRecipe.Slug,
             PublicRecipe.Title,
             PublicRecipe.Description,
             PublicRecipe.Tags);
@@ -199,10 +215,18 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
         return Task.FromResult(new RecipeListResponse([item], page, pageSize, 1, 1));
     }
 
-    public Task<RecipeResponse?> GetPublicByIdAsync(Guid id, CancellationToken cancellationToken)
+    public Task<RecipeResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken)
     {
         return Task.FromResult<RecipeResponse?>(
-            id == TestData.PublicRecipeId ? PublicRecipe : null);
+            slug == PublicRecipe.Slug ? PublicRecipe : null);
+    }
+
+    public Task<RecipeResponse?> GetPublicByHistoricalSlugAsync(
+        string slug,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult<RecipeResponse?>(
+            slug == "old-creamy-tomato-pasta" ? PublicRecipe : null);
     }
 
     public Task<IReadOnlyList<string>> ListPublicTagsAsync(CancellationToken cancellationToken) =>

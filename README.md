@@ -110,6 +110,13 @@ to `Healthy`. The OpenAPI request should return HTTP 200 in Development.
 
 ### Public recipe discovery
 
+Public recipe URLs use readable slugs generated automatically from the recipe
+title. For example, `Creamy Tomato Pasta` becomes `creamy-tomato-pasta`; if
+that slug already exists, the next recipes use `-2`, `-3`, and so on. Slugs
+are never entered manually. Owner management endpoints continue to use the
+internal recipe ID. When a recipe is renamed, its previous slug is retained
+and permanently redirects to the current public URL.
+
 List all public recipes:
 
 ```powershell
@@ -146,7 +153,7 @@ Get the seeded public recipe:
 
 ```powershell
 Invoke-RestMethod `
-  http://localhost:5093/recipes/11111111-1111-1111-1111-111111111111
+  http://localhost:5093/recipes/creamy-tomato-pasta
 ```
 
 The seeded private recipe must not be exposed and should return HTTP 404:

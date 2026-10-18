@@ -166,6 +166,11 @@ namespace Savor.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(220)
+                        .HasColumnType("character varying(220)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -178,6 +183,9 @@ namespace Savor.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
                     b.ToTable("recipes", (string)null);
 
                     b.HasData(
@@ -186,6 +194,7 @@ namespace Savor.Infrastructure.Persistence.Migrations
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             Description = "A quick pasta with tomato, garlic, and cream.",
                             OwnerId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            Slug = "creamy-tomato-pasta",
                             Title = "Creamy Tomato Pasta",
                             Visibility = "Public"
                         },
@@ -194,6 +203,7 @@ namespace Savor.Infrastructure.Persistence.Migrations
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             Description = "A private recipe used to verify visibility filtering.",
                             OwnerId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            Slug = "family-sunday-stew",
                             Title = "Family Sunday Stew",
                             Visibility = "Private"
                         },
@@ -202,6 +212,7 @@ namespace Savor.Infrastructure.Persistence.Migrations
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
                             Description = "A fast stir-fry with chicken, garlic, and vegetables.",
                             OwnerId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            Slug = "garlic-chicken-stir-fry",
                             Title = "Garlic Chicken Stir-Fry",
                             Visibility = "Public"
                         },
@@ -210,6 +221,7 @@ namespace Savor.Infrastructure.Persistence.Migrations
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             Description = "A fluffy omelette with eggs, tomato, and onion.",
                             OwnerId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            Slug = "garden-omelette",
                             Title = "Garden Omelette",
                             Visibility = "Public"
                         },
@@ -218,6 +230,7 @@ namespace Savor.Infrastructure.Persistence.Migrations
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             Description = "Golden bread with garlic and butter.",
                             OwnerId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            Slug = "garlic-bread",
                             Title = "Garlic Bread",
                             Visibility = "Public"
                         });
@@ -337,6 +350,25 @@ namespace Savor.Infrastructure.Persistence.Migrations
                             Quantity = 50m,
                             Unit = "g"
                         });
+                });
+
+            modelBuilder.Entity("Savor.Domain.Recipes.RecipeSlugHistory", b =>
+                {
+                    b.Property<string>("Slug")
+                        .HasMaxLength(220)
+                        .HasColumnType("character varying(220)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecipeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Slug");
+
+                    b.HasIndex("RecipeId");
+
+                    b.ToTable("recipe_slug_history", (string)null);
                 });
 
             modelBuilder.Entity("Savor.Domain.Recipes.RecipeStep", b =>
@@ -573,6 +605,15 @@ namespace Savor.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Savor.Domain.Recipes.Recipe", null)
                         .WithMany("Ingredients")
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Savor.Domain.Recipes.RecipeSlugHistory", b =>
+                {
+                    b.HasOne("Savor.Domain.Recipes.Recipe", null)
+                        .WithMany()
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

@@ -15,6 +15,7 @@ public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
 
     public DbSet<RecipeTag> RecipeTags => Set<RecipeTag>();
     public DbSet<RecipeStep> RecipeSteps => Set<RecipeStep>();
+    public DbSet<RecipeSlugHistory> RecipeSlugHistory => Set<RecipeSlugHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,6 +33,7 @@ public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
             new
             {
                 Id = publicRecipeId,
+                Slug = "creamy-tomato-pasta",
                 OwnerId = ownerId,
                 Title = "Creamy Tomato Pasta",
                 Description = "A quick pasta with tomato, garlic, and cream.",
@@ -40,6 +42,7 @@ public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
             new
             {
                 Id = privateRecipeId,
+                Slug = "family-sunday-stew",
                 OwnerId = ownerId,
                 Title = "Family Sunday Stew",
                 Description = "A private recipe used to verify visibility filtering.",
@@ -48,6 +51,7 @@ public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
             new
             {
                 Id = chickenStirFryId,
+                Slug = "garlic-chicken-stir-fry",
                 OwnerId = ownerId,
                 Title = "Garlic Chicken Stir-Fry",
                 Description = "A fast stir-fry with chicken, garlic, and vegetables.",
@@ -56,6 +60,7 @@ public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
             new
             {
                 Id = gardenOmeletteId,
+                Slug = "garden-omelette",
                 OwnerId = ownerId,
                 Title = "Garden Omelette",
                 Description = "A fluffy omelette with eggs, tomato, and onion.",
@@ -64,6 +69,7 @@ public sealed class SavorDbContext(DbContextOptions<SavorDbContext> options)
             new
             {
                 Id = garlicBreadId,
+                Slug = "garlic-bread",
                 OwnerId = ownerId,
                 Title = "Garlic Bread",
                 Description = "Golden bread with garlic and butter.",

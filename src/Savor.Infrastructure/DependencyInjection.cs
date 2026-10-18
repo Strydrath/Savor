@@ -22,6 +22,7 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<SavorDbContext>();
         services.AddScoped<IRecipeQueryService, RecipeQueryService>();
         services.AddScoped<IRecipeCommandService, RecipeCommandService>();
+        services.AddScoped<RecipeSlugGenerator>();
 
         return services;
     }

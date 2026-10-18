@@ -35,8 +35,8 @@ public sealed class SavorApiClient(IConfiguration configuration)
         return await _httpClient.GetFromJsonAsync<RecipeListResponse>(path, cancellationToken);
     }
 
-    public Task<RecipeResponse?> GetRecipeAsync(Guid id, CancellationToken cancellationToken = default) =>
-        GetOrDefaultAsync<RecipeResponse>($"/recipes/{id}", cancellationToken);
+    public Task<RecipeResponse?> GetRecipeAsync(string slug, CancellationToken cancellationToken = default) =>
+        GetOrDefaultAsync<RecipeResponse>($"/recipes/{Uri.EscapeDataString(slug)}", cancellationToken);
 
     public Task<IReadOnlyList<string>?> ListRecipeTagsAsync(
         CancellationToken cancellationToken = default) =>

@@ -1,4 +1,4 @@
-@page "/recipes/{Id:guid}"
+@page "/recipes/{Slug}"
 @inject SavorApiClient Api
 
 <PageTitle>Recipe | Savor</PageTitle>
@@ -37,11 +37,11 @@ else
 }
 
 @code {
-    [Parameter] public Guid Id { get; set; }
+    [Parameter] public string Slug { get; set; } = string.Empty;
     private RecipeResponse? recipe;
 
     protected override async Task OnParametersSetAsync()
     {
-        recipe = await Api.GetRecipeAsync(Id);
+        recipe = await Api.GetRecipeAsync(Slug);
     }
 }

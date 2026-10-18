@@ -55,7 +55,7 @@ else
     <div class="recipe-grid">
         @foreach (var recipe in recipes.Items)
         {
-            <a class="recipe-card" href="@($"/recipes/{recipe.Id}")">
+            <a class="recipe-card" href="@($"/recipes/{recipe.Slug}")">
                 <span class="recipe-card__label">@string.Join(" · ", recipe.Tags)</span>
                 <h2>@recipe.Title</h2>
                 <p>@recipe.Description</p>

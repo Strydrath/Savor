@@ -62,10 +62,10 @@ GET {{baseUrl}}/recipes/?tag=quick
 GET {{baseUrl}}/recipes/?ingredient=tomato&page=1&pageSize=20
 
 ### Get the seeded public recipe
-GET {{baseUrl}}/recipes/11111111-1111-1111-1111-111111111111
+GET {{baseUrl}}/recipes/creamy-tomato-pasta
 
 ### Private recipes are not exposed
-GET {{baseUrl}}/recipes/22222222-2222-2222-2222-222222222222
+GET {{baseUrl}}/recipes/family-sunday-stew
 
 ### Unknown recipes return 404
-GET {{baseUrl}}/recipes/00000000-0000-0000-0000-000000000000
+GET {{baseUrl}}/recipes/does-not-exist

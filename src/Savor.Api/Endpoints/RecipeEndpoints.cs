@@ -38,20 +38,27 @@ public static class RecipeEndpoints
             .WithSummary("List existing public recipe tags")
             .Produces<IReadOnlyList<string>>();
 
-        recipes.MapGet("/{id:guid}", async Task<Results<Ok<RecipeResponse>, NotFound>> (
-                Guid id,
+        recipes.MapGet("/{slug}", async Task<Results<Ok<RecipeResponse>, RedirectHttpResult, NotFound>> (
+                string slug,
                 IRecipeQueryService service,
                 CancellationToken cancellationToken) =>
         {
-            var recipe = await service.GetPublicByIdAsync(id, cancellationToken);
-            return recipe is null
+            var recipe = await service.GetPublicBySlugAsync(slug, cancellationToken);
+            if (recipe is not null)
+            {
+                return TypedResults.Ok(recipe);
+            }
+
+            var historicalRecipe = await service.GetPublicByHistoricalSlugAsync(slug, cancellationToken);
+            return historicalRecipe is null
                 ? TypedResults.NotFound()
-                : TypedResults.Ok(recipe);
+                : TypedResults.Redirect($"/recipes/{historicalRecipe.Slug}", permanent: true, preserveMethod: true);
         })
             .WithName("GetPublicRecipe")
             .WithSummary("Get a public recipe")
-            .WithDescription("Returns a public recipe by ID. Private recipes are not exposed.")
+            .WithDescription("Returns a public recipe by its generated slug. Private recipes are not exposed.")
             .Produces<RecipeResponse>()
+            .Produces(StatusCodes.Status308PermanentRedirect)
             .Produces(StatusCodes.Status404NotFound);
 
         var ownedRecipes = endpoints.MapGroup("/recipes/mine")
