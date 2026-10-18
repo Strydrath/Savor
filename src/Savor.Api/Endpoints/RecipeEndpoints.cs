@@ -15,6 +15,7 @@ public static class RecipeEndpoints
         recipes.MapGet("/", async Task<Ok<RecipeListResponse>> (
                 string[]? tag,
                 string[]? ingredient,
+                IngredientMatchMode? ingredientMode,
                 int? page,
                 int? pageSize,
                 IRecipeQueryService service,
@@ -22,6 +23,7 @@ public static class RecipeEndpoints
             TypedResults.Ok(await service.ListPublicAsync(
                 tag ?? [],
                 ingredient ?? [],
+                ingredientMode ?? IngredientMatchMode.Any,
                 Math.Max(page ?? 1, 1),
                 Math.Clamp(pageSize ?? 20, 1, 100),
                 cancellationToken)))
@@ -40,10 +42,11 @@ public static class RecipeEndpoints
 
         recipes.MapGet("/{slug}", async Task<Results<Ok<RecipeResponse>, RedirectHttpResult, NotFound>> (
                 string slug,
+                string[]? ingredient,
                 IRecipeQueryService service,
                 CancellationToken cancellationToken) =>
         {
-            var recipe = await service.GetPublicBySlugAsync(slug, cancellationToken);
+            var recipe = await service.GetPublicBySlugAsync(slug, ingredient ?? [], cancellationToken);
             if (recipe is not null)
             {
                 return TypedResults.Ok(recipe);

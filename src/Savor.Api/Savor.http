@@ -61,6 +61,9 @@ GET {{baseUrl}}/recipes/?tag=quick
 ### Filter public recipes by ingredient
 GET {{baseUrl}}/recipes/?ingredient=tomato&page=1&pageSize=20
 
+### Recipes containing every selected ingredient
+GET {{baseUrl}}/recipes/?ingredient=tomato&ingredient=garlic&ingredientMode=All
+
 ### Get the seeded public recipe
 GET {{baseUrl}}/recipes/creamy-tomato-pasta
 

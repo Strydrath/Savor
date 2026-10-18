@@ -8,4 +8,6 @@ public sealed record RecipeResponse(
     string Description,
     IReadOnlyList<RecipeIngredientResponse> Ingredients,
     IReadOnlyList<string> Tags,
-    IReadOnlyList<RecipeStepResponse> Steps);
+    IReadOnlyList<RecipeStepResponse> Steps,
+    int MatchedIngredientCount,
+    IReadOnlyList<string> MissingIngredients);

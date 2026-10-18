@@ -137,9 +137,20 @@ or by repeating the `ingredient` query parameter in API requests:
 Invoke-RestMethod 'http://localhost:5093/recipes/?ingredient=tomato&ingredient=garlic'
 ```
 
-Recipes containing all requested ingredients appear first, followed by recipes
-containing fewer of the requested ingredients. Results containing at least one
-requested ingredient are included.
+By default, recipes containing all requested ingredients appear first,
+followed by recipes containing fewer of the requested ingredients. Results
+containing at least one requested ingredient are included. Use
+`ingredientMode=All` to exclude recipes that do not contain every requested
+ingredient:
+
+```powershell
+Invoke-RestMethod 'http://localhost:5093/recipes/?ingredient=tomato&ingredient=garlic&ingredientMode=All'
+```
+
+Recipe list responses include `matchedIngredientCount` and
+`totalIngredientCount`. When opening a recipe from a pantry-filtered list, the
+selected ingredients are carried to the detail page, which shows the matching
+count and missing ingredient names.
 
 Recipe tags can be selected from the first three most-used public tags, or
 searched by typing. Multiple tags can be selected in the web UI and sent to

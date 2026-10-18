@@ -38,7 +38,15 @@
         </div>
     </div>
     <input @bind="ingredients" placeholder="Ingredients, separated by commas" />
-    <small>Recipes using the most of your ingredients appear first.</small>
+    <select @bind="ingredientMode">
+        <option value="Any">Any ingredients</option>
+        <option value="All">All ingredients</option>
+    </select>
+    <small>
+        @(ingredientMode == "All"
+            ? "Only recipes containing every ingredient will be shown."
+            : "Recipes using the most of your ingredients appear first.")
+    </small>
     <button @onclick="LoadRecipes">Search</button>
 </div>
 
@@ -55,10 +63,14 @@ else
     <div class="recipe-grid">
         @foreach (var recipe in recipes.Items)
         {
-            <a class="recipe-card" href="@($"/recipes/{recipe.Slug}")">
+            <a class="recipe-card" href="@RecipeLink(recipe.Slug)">
                 <span class="recipe-card__label">@string.Join(" · ", recipe.Tags)</span>
                 <h2>@recipe.Title</h2>
                 <p>@recipe.Description</p>
+                @if (recipe.TotalIngredientCount > 0 && !string.IsNullOrWhiteSpace(ingredients))
+                {
+                    <small>@recipe.MatchedIngredientCount of @recipe.TotalIngredientCount ingredients available</small>
+                }
             </a>
         }
     </div>
@@ -68,6 +80,7 @@ else
     private RecipeListResponse? recipes;
     private string? tagSearch;
     private string? ingredients;
+    private string ingredientMode = "Any";
     private bool tagFieldActive;
     private IReadOnlyList<string> availableTags = [];
     private readonly List<string> selectedTags = [];
@@ -86,7 +99,7 @@ else
 
     private async Task LoadRecipes()
     {
-        recipes = await Api.ListRecipesAsync(string.Join(",", selectedTags), ingredients);
+        recipes = await Api.ListRecipesAsync(string.Join(",", selectedTags), ingredients, ingredientMode);
     }
 
     private void ToggleTag(string tag)
@@ -101,4 +114,13 @@ else
 
     private void ShowTagSuggestions() => tagFieldActive = true;
     private void HideTagSuggestions() => tagFieldActive = false;
+
+    private string RecipeLink(string slug)
+    {
+        var ingredientQuery = string.IsNullOrWhiteSpace(ingredients)
+            ? string.Empty
+            : $"?{string.Join("&", ingredients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(ingredient => $"ingredient={Uri.EscapeDataString(ingredient)}"))}&ingredientMode={ingredientMode}";
+        return $"/recipes/{slug}{ingredientQuery}";
+    }
 }

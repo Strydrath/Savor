@@ -129,5 +129,7 @@ internal sealed class RecipeCommandService(
             recipe.Steps
                 .OrderBy(item => item.StepNumber)
                 .Select(item => new RecipeStepResponse(item.StepNumber, item.Instruction))
-                .ToArray());
+                .ToArray(),
+            0,
+            []);
 }

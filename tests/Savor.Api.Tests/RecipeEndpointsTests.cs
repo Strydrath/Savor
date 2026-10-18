@@ -32,6 +32,7 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
         Assert.NotNull(result);
         Assert.Single(result.Items);
         Assert.Equal("Creamy Tomato Pasta", result.Items[0].Title);
+        Assert.Equal(0, result.Items[0].MatchedIngredientCount);
     }
 
     [Fact]
@@ -60,6 +61,19 @@ public sealed class RecipeEndpointsTests : IClassFixture<SavorApiFactory>
         Assert.NotNull(result);
         Assert.Equal("Creamy Tomato Pasta", result.Items[0].Title);
         Assert.Equal("Garden Omelette", result.Items[1].Title);
+    }
+
+    [Fact]
+    public async Task ListRecipes_SupportsAllIngredientMode()
+    {
+        var response = await _client.GetAsync(
+            "/recipes/?ingredient=tomato&ingredient=garlic&ingredientMode=All");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<RecipeListResponse>();
+
+        Assert.NotNull(result);
+        Assert.Empty(result.Items);
     }
 
     [Fact]
@@ -162,18 +176,23 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
         "A quick pasta with tomato, garlic, and cream.",
         [new RecipeIngredientResponse("tomato", 400, "g")],
         ["quick", "pasta"],
-        [new RecipeStepResponse(1, "Cook the pasta.")]);
+        [new RecipeStepResponse(1, "Cook the pasta.")],
+        0,
+        []);
 
     private static readonly RecipeSummaryResponse PartialMatchRecipe = new(
         Guid.Parse("33333333-3333-3333-3333-333333333333"),
         "garden-omelette",
         "Garden Omelette",
         "A fluffy omelette with tomato.",
-        ["breakfast"]);
+        ["breakfast"],
+        0,
+        2);
 
     public Task<RecipeListResponse> ListPublicAsync(
         IReadOnlyList<string> tags,
         IReadOnlyList<string> ingredients,
+        IngredientMatchMode ingredientMatchMode,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
@@ -189,6 +208,11 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
             return Task.FromResult(new RecipeListResponse([], page, pageSize, 0, 0));
         }
 
+        if (ingredientMatchMode == IngredientMatchMode.All && ingredients.Count > 1)
+        {
+            return Task.FromResult(new RecipeListResponse([], page, pageSize, 0, 0));
+        }
+
         if (ingredients.Count > 1)
         {
             var rankedItems = new RecipeSummaryResponse(
@@ -196,7 +220,9 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
                 PublicRecipe.Slug,
                 PublicRecipe.Title,
                 PublicRecipe.Description,
-                PublicRecipe.Tags);
+                PublicRecipe.Tags,
+                ingredients.Count,
+                1);
             return Task.FromResult(new RecipeListResponse(
                 [rankedItems, PartialMatchRecipe],
                 page,
@@ -210,12 +236,17 @@ internal sealed class TestRecipeQueryService : IRecipeQueryService
             PublicRecipe.Slug,
             PublicRecipe.Title,
             PublicRecipe.Description,
-            PublicRecipe.Tags);
+            PublicRecipe.Tags,
+            ingredients.Count,
+            1);
 
         return Task.FromResult(new RecipeListResponse([item], page, pageSize, 1, 1));
     }
 
-    public Task<RecipeResponse?> GetPublicBySlugAsync(string slug, CancellationToken cancellationToken)
+    public Task<RecipeResponse?> GetPublicBySlugAsync(
+        string slug,
+        IReadOnlyList<string> ingredients,
+        CancellationToken cancellationToken)
     {
         return Task.FromResult<RecipeResponse?>(
             slug == PublicRecipe.Slug ? PublicRecipe : null);
