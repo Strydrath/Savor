@@ -8,6 +8,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: savor
+          POSTGRES_USER: savor
+          POSTGRES_PASSWORD: savor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U savor -d savor"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Setup .NET
@@ -19,4 +33,6 @@ jobs:
       - name: Build
         run: dotnet build Savor.slnx --configuration Release --no-restore
       - name: Test
+        env:
+          ConnectionStrings__Database: Host=localhost;Port=5432;Database=savor;Username=savor;Password=savor
         run: dotnet test Savor.slnx --configuration Release --no-build
