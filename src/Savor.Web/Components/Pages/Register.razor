@@ -25,9 +25,9 @@
     private async Task SubmitRegistration()
     {
         var result = await Api.RegisterAsync(model.Email, model.Password);
-        if (result is null)
+        if (!result.IsSuccess)
         {
-            error = "Registration failed. Check your email and password.";
+            error = result.Error;
             return;
         }
 

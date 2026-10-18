@@ -17,9 +17,16 @@ else
         <ul>
             @foreach (var ingredient in recipe.Ingredients)
             {
-                <li>@ingredient.Quantity @ingredient.Unit @ingredient.Name</li>
+                <li>@ingredient.Quantity.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture) @ingredient.Unit @ingredient.Name</li>
             }
         </ul>
+        <h2>Method</h2>
+        <ol>
+            @foreach (var step in recipe.Steps)
+            {
+                <li>@step.Instruction</li>
+            }
+        </ol>
         <div class="tags">
             @foreach (var tag in recipe.Tags)
             {

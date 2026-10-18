@@ -6,6 +6,7 @@ public sealed class Recipe : Entity
 {
     private readonly List<RecipeIngredient> _ingredients = [];
     private readonly List<RecipeTag> _tags = [];
+    private readonly List<RecipeStep> _steps = [];
 
     private Recipe()
     {
@@ -25,6 +26,7 @@ public sealed class Recipe : Entity
     public RecipeVisibility Visibility { get; private set; }
     public IReadOnlyCollection<RecipeIngredient> Ingredients => _ingredients;
     public IReadOnlyCollection<RecipeTag> Tags => _tags;
+    public IReadOnlyCollection<RecipeStep> Steps => _steps;
 
     public void AddIngredient(string name, decimal quantity, string unit)
     {
@@ -36,12 +38,21 @@ public sealed class Recipe : Entity
         _tags.Add(new RecipeTag(Id, name));
     }
 
-    public void Update(string title, string description, RecipeVisibility visibility)
+    public void AddStep(int stepNumber, string instruction)
+    {
+        _steps.Add(new RecipeStep(Id, stepNumber, instruction));
+    }
+
+    public void Update(
+        string title,
+        string description,
+        RecipeVisibility visibility)
     {
         Title = title;
         Description = description;
         Visibility = visibility;
         _ingredients.Clear();
         _tags.Clear();
+        _steps.Clear();
     }
 }

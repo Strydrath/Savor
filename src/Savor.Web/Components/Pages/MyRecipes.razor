@@ -11,20 +11,92 @@
 {
     <p class="success-message">@saved</p>
 }
-<EditForm Model="model" OnValidSubmit="Save">
-    <DataAnnotationsValidator />
-    <div class="recipe-form">
-        <label>Title <InputText @bind-Value="model.Title" /></label>
-        <ValidationMessage For="() => model.Title" />
-        <label>Description <InputTextArea @bind-Value="model.Description" /></label>
-        <ValidationMessage For="() => model.Description" />
-        <label><InputCheckbox @bind-Value="model.IsPublic" /> Make public</label>
-        <button type="submit">@((editingId is null) ? "Create recipe" : "Save changes")</button>
-        @if (editingId is not null) { <button type="button" @onclick="Reset">Cancel</button> }
-    </div>
-</EditForm>
+<button @onclick="OpenCreate">Create a new recipe</button>
 
 @if (error is not null) { <p class="form-error">@error</p> }
+@if (showForm)
+{
+    <div class="recipe-editor">
+        <div class="recipe-editor__header">
+            <h2>@((editingId is null) ? "Create a new recipe" : "Edit recipe")</h2>
+            <button type="button" class="button-secondary" @onclick="Reset">Close</button>
+        </div>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="recipe-main-fields">
+                <label>Title <InputText @bind-Value="model.Title" /></label>
+                <ValidationMessage For="() => model.Title" />
+                <label>Description <InputTextArea @bind-Value="model.Description" /></label>
+                <ValidationMessage For="() => model.Description" />
+            </div>
+            <label class="checkbox-field">
+                <InputCheckbox @bind-Value="model.IsPublic" />
+                <span>Make public</span>
+            </label>
+
+            <h3>Ingredients</h3>
+            @foreach (var ingredient in model.Ingredients)
+            {
+                <div class="recipe-row">
+                    <InputNumber @bind-Value="ingredient.Quantity" />
+                    <InputText @bind-Value="ingredient.Unit" placeholder="Unit" />
+                    <InputText @bind-Value="ingredient.Name" placeholder="Ingredient" />
+                    <button type="button" class="button-secondary" @onclick="() => RemoveIngredient(ingredient)">Remove</button>
+                </div>
+            }
+            <button type="button" class="button-secondary" @onclick="AddIngredient">Add ingredient</button>
+
+            <h3>Tags</h3>
+            <div class="tag-picker">
+                <div class="tag-entry">
+                    <InputText @bind="newTag"
+                               @bind:event="oninput"
+                               @onfocus="ShowTagSuggestions"
+                               @onblur="HideTagSuggestions"
+                               placeholder="Add or search for a tag" />
+                    <button type="button" class="button-secondary" @onclick="AddNewTag">Add tag</button>
+                </div>
+                @if (tagFieldActive && tagSuggestions.Count > 0)
+                {
+                    <div class="suggestions">
+                        @foreach (var tag in tagSuggestions)
+                        {
+                            <button type="button"
+                                    class="suggestion"
+                                    @onmousedown:preventDefault
+                                    @onclick="() => ToggleTag(tag)">
+                                @tag
+                            </button>
+                        }
+                    </div>
+                }
+                <div class="tags">
+                    @foreach (var tag in model.Tags)
+                    {
+                        <span>@tag <button type="button" class="tag-remove" @onclick="() => RemoveTag(tag)">×</button></span>
+                    }
+                </div>
+            </div>
+
+            <h3>Steps</h3>
+            @for (var index = 0; index < model.Steps.Count; index++)
+            {
+                var step = model.Steps[index];
+                <div class="recipe-row">
+                    <span class="step-number">@(index + 1)</span>
+                    <InputTextArea @bind-Value="step.Instruction" placeholder="Describe this step" />
+                    <button type="button" class="button-secondary" @onclick="() => RemoveStep(step)">Remove</button>
+                </div>
+            }
+            <button type="button" class="button-secondary" @onclick="AddStep">Add step</button>
+
+            <div class="recipe-form__actions">
+                <button type="submit">@((editingId is null) ? "Create recipe" : "Save changes")</button>
+                <button type="button" class="button-secondary" @onclick="Reset">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
+}
 @if (recipes.Count == 0)
 {
     <p class="empty-state">You have not created any recipes yet.</p>
@@ -48,8 +120,18 @@ else
     private readonly List<RecipeResponse> recipes = [];
     private RecipeForm model = new();
     private Guid? editingId;
+    private bool showForm;
     private string? error;
     private string? saved;
+    private string? newTag;
+    private IReadOnlyList<string> availableTags = [];
+    private bool tagFieldActive;
+    private IReadOnlyList<string> tagSuggestions => availableTags
+        .Where(tag => !model.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        .Where(tag => string.IsNullOrWhiteSpace(newTag)
+            || tag.Contains(newTag.Trim(), StringComparison.OrdinalIgnoreCase))
+        .Take(string.IsNullOrWhiteSpace(newTag) ? 3 : 10)
+        .ToArray();
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,6 +141,8 @@ else
             Navigation.NavigateTo("/login");
             return;
         }
+
+        availableTags = await Api.ListRecipeTagsAsync() ?? [];
     }
 
     private async Task Save()
@@ -67,7 +151,18 @@ else
         {
             Title = model.Title,
             Description = model.Description,
-            Visibility = model.IsPublic ? RecipeVisibility.Public : RecipeVisibility.Private
+            Visibility = model.IsPublic ? RecipeVisibility.Public : RecipeVisibility.Private,
+            Ingredients = model.Ingredients.Select(item => new RecipeIngredientRequest
+            {
+                Name = item.Name,
+                Quantity = item.Quantity,
+                Unit = item.Unit
+            }).ToArray(),
+            Steps = model.Steps.Select(item => new RecipeStepRequest
+            {
+                Instruction = item.Instruction
+            }).ToArray(),
+            Tags = model.Tags.ToArray()
         };
         RecipeResponse? result = editingId is null
             ? await Api.CreateRecipeAsync(request)
@@ -75,7 +170,10 @@ else
             {
                 Title = request.Title,
                 Description = request.Description,
-                Visibility = request.Visibility
+                Visibility = request.Visibility,
+                Ingredients = request.Ingredients,
+                Steps = request.Steps,
+                Tags = request.Tags
             });
 
         if (result is null) { error = "The recipe could not be saved."; return; }
@@ -85,10 +183,35 @@ else
         Reset();
     }
 
+    private void OpenCreate()
+    {
+        error = null;
+        saved = null;
+        editingId = null;
+        model = new RecipeForm();
+        showForm = true;
+    }
+
     private void Edit(RecipeResponse recipe)
     {
         editingId = recipe.Id;
-        model = new RecipeForm { Title = recipe.Title, Description = recipe.Description };
+        model = new RecipeForm
+        {
+            Title = recipe.Title,
+            Description = recipe.Description,
+            Ingredients = recipe.Ingredients
+                .Select(item => new IngredientForm
+                {
+                    Name = item.Name,
+                    Quantity = item.Quantity,
+                    Unit = item.Unit
+                }).ToList(),
+            Steps = recipe.Steps
+                .Select(item => new StepForm { Instruction = item.Instruction })
+                .ToList(),
+            Tags = recipe.Tags.ToList()
+        };
+        showForm = true;
     }
 
     private async Task Delete(Guid id)
@@ -100,7 +223,41 @@ else
         }
     }
 
-    private void Reset() { editingId = null; model = new(); }
+    private void AddIngredient() => model.Ingredients.Add(new IngredientForm());
+    private void RemoveIngredient(IngredientForm ingredient) => model.Ingredients.Remove(ingredient);
+    private void AddStep() => model.Steps.Add(new StepForm());
+    private void RemoveStep(StepForm step) => model.Steps.Remove(step);
+    private void ToggleTag(string tag)
+    {
+        if (!model.Tags.Remove(tag))
+        {
+            model.Tags.Add(tag);
+        }
+        newTag = null;
+    }
+
+    private void AddNewTag()
+    {
+        var tag = newTag?.Trim();
+        if (string.IsNullOrWhiteSpace(tag) || model.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        model.Tags.Add(tag);
+        newTag = null;
+    }
+
+    private void RemoveTag(string tag) => model.Tags.Remove(tag);
+    private void ShowTagSuggestions() => tagFieldActive = true;
+    private void HideTagSuggestions() => tagFieldActive = false;
+    private void Reset()
+    {
+        editingId = null;
+        model = new();
+        showForm = false;
+    }
+
     private sealed class RecipeForm
     {
         [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MaxLength(200)]
@@ -108,5 +265,20 @@ else
         [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MaxLength(4000)]
         public string Description { get; set; } = string.Empty;
         public bool IsPublic { get; set; }
+        public List<IngredientForm> Ingredients { get; set; } = [];
+        public List<StepForm> Steps { get; set; } = [];
+        public List<string> Tags { get; set; } = [];
+    }
+
+    private sealed class IngredientForm
+    {
+        public string Name { get; set; } = string.Empty;
+        public decimal Quantity { get; set; } = 1;
+        public string Unit { get; set; } = string.Empty;
+    }
+
+    private sealed class StepForm
+    {
+        public string Instruction { get; set; } = string.Empty;
     }
 }

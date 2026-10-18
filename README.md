@@ -123,6 +123,25 @@ Invoke-RestMethod 'http://localhost:5093/recipes/?tag=quick'
 Invoke-RestMethod 'http://localhost:5093/recipes/?ingredient=tomato&page=1&pageSize=20'
 ```
 
+Search with multiple ingredients by separating them with commas in the web UI,
+or by repeating the `ingredient` query parameter in API requests:
+
+```powershell
+Invoke-RestMethod 'http://localhost:5093/recipes/?ingredient=tomato&ingredient=garlic'
+```
+
+Recipes containing all requested ingredients appear first, followed by recipes
+containing fewer of the requested ingredients. Results containing at least one
+requested ingredient are included.
+
+Recipe tags can be selected from the first three most-used public tags, or
+searched by typing. Multiple tags can be selected in the web UI and sent to
+the API by repeating the `tag` query parameter:
+
+```powershell
+Invoke-RestMethod 'http://localhost:5093/recipes/?tag=quick&tag=pasta'
+```
+
 Get the seeded public recipe:
 
 ```powershell

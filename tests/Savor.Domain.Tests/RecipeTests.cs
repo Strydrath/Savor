@@ -22,11 +22,16 @@ public sealed class RecipeTests
 
         recipe.AddIngredient("carrot", 2, "pieces");
         recipe.AddTag("quick");
+        recipe.AddStep(1, "Chop the carrot.");
 
         var ingredient = Assert.Single(recipe.Ingredients);
         var tag = Assert.Single(recipe.Tags);
         Assert.Equal("carrot", ingredient.Name);
         Assert.Equal("quick", tag.Name);
+        var step = Assert.Single(recipe.Steps);
+        Assert.Equal(recipe.Id, step.RecipeId);
+        Assert.Equal(1, step.StepNumber);
+        Assert.Equal("Chop the carrot.", step.Instruction);
     }
 
     [Fact]
@@ -36,6 +41,7 @@ public sealed class RecipeTests
         var recipe = new Recipe(ownerId, "Soup", "A simple soup.", RecipeVisibility.Private);
         recipe.AddIngredient("carrot", 2, "pieces");
         recipe.AddTag("quick");
+        recipe.AddStep(1, "Cook the soup.");
         var recipeId = recipe.Id;
 
         recipe.Update("Stew", "A slow-cooked stew.", RecipeVisibility.Public);
@@ -47,6 +53,7 @@ public sealed class RecipeTests
         Assert.Equal(RecipeVisibility.Public, recipe.Visibility);
         Assert.Empty(recipe.Ingredients);
         Assert.Empty(recipe.Tags);
+        Assert.Empty(recipe.Steps);
     }
 
     [Fact]

@@ -146,6 +146,121 @@ h1 {
     margin: 1rem 0 2rem;
 }
 
+.recipe-main-fields {
+    display: grid;
+    gap: .75rem;
+    margin: 1rem 0;
+}
+
+.recipe-main-fields label {
+    display: block;
+}
+
+.checkbox-field {
+    align-items: center;
+    display: inline-flex;
+    flex: none;
+    gap: .5rem;
+    margin: .5rem 0 1rem;
+    width: auto;
+}
+
+.checkbox-field input {
+    flex: none;
+    margin: 0;
+    width: auto;
+}
+
+.recipe-editor {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    margin: 1.5rem 0 2rem;
+    padding: 1.5rem;
+}
+
+.recipe-editor__header, .recipe-form__actions {
+    align-items: center;
+    display: flex;
+    gap: .75rem;
+    justify-content: space-between;
+}
+
+.recipe-row {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+    margin: .75rem 0;
+}
+
+.recipe-row input, .recipe-row textarea {
+    margin-top: 0;
+}
+
+.recipe-row textarea {
+    flex: 1;
+}
+
+.step-number {
+    color: var(--sage-dark);
+    font-weight: 700;
+    min-width: 1.5rem;
+}
+
+.tag-picker {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.tag-entry {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: .75rem 0;
+}
+
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: .5rem 0;
+}
+
+.suggestion {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: .45rem .8rem;
+}
+
+.filter-picker {
+    min-width: 240px;
+    position: relative;
+}
+
+.filter-picker .suggestions {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: .5rem;
+    padding: .5rem;
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    z-index: 2;
+}
+
+.tag-entry input {
+    flex: 1 1 220px;
+    margin: 0;
+}
+
+.tag-remove {
+    background: transparent;
+    color: var(--sage-dark);
+    padding: 0 .2rem;
+}
+
 input, textarea {
     background: var(--paper);
     border: 1px solid var(--line);

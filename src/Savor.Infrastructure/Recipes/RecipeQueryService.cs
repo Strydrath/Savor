@@ -10,8 +10,8 @@ namespace Savor.Infrastructure.Recipes;
 internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQueryService
 {
     public async Task<RecipeListResponse> ListPublicAsync(
-        string? tag,
-        string? ingredient,
+        IReadOnlyList<string> tags,
+        IReadOnlyList<string> ingredients,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
@@ -20,27 +20,72 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
             .AsNoTracking()
             .Where(recipe => recipe.Visibility == DomainRecipeVisibility.Public);
 
-        if (!string.IsNullOrWhiteSpace(tag))
+        var requestedTags = tags
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        foreach (var requestedTag in requestedTags)
         {
             query = query.Where(recipe => recipe.Tags.Any(recipeTag =>
-                EF.Functions.ILike(recipeTag.Name, tag.Trim())));
+                EF.Functions.ILike(recipeTag.Name, requestedTag)));
         }
 
-        if (!string.IsNullOrWhiteSpace(ingredient))
-        {
-            query = query.Where(recipe => recipe.Ingredients.Any(recipeIngredient =>
-                EF.Functions.ILike(recipeIngredient.Name, $"%{ingredient.Trim()}%")));
-        }
+        var requestedIngredients = ingredients
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var recipes = await query
-            .OrderBy(recipe => recipe.Title)
-            .ThenBy(recipe => recipe.Id)
+        var recipesQuery = query
             .Include(recipe => recipe.Tags)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+            .Include(recipe => recipe.Ingredients);
+        if (requestedIngredients.Length == 0)
+        {
+            var totalCount = await recipesQuery.CountAsync(cancellationToken);
+            var pageRecipes = await recipesQuery
+                .OrderBy(recipe => recipe.Title)
+                .ThenBy(recipe => recipe.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
 
+            return CreateListResponse(pageRecipes, page, pageSize, totalCount);
+        }
+
+        var allRecipes = await recipesQuery.ToListAsync(cancellationToken);
+        var rankedRecipes = allRecipes
+            .Select(recipe => new
+            {
+                Recipe = recipe,
+                MatchCount = requestedIngredients.Count(requested =>
+                    recipe.Ingredients.Any(recipeIngredient =>
+                        recipeIngredient.Name.Contains(requested, StringComparison.OrdinalIgnoreCase)))
+            })
+            .Where(item => item.MatchCount > 0)
+            .OrderByDescending(item => item.MatchCount)
+            .ThenBy(item => item.Recipe.Title)
+            .ThenBy(item => item.Recipe.Id)
+            .Select(item => item.Recipe)
+            .ToArray();
+
+        return CreateListResponse(
+            rankedRecipes
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToArray(),
+            page,
+            pageSize,
+            rankedRecipes.Length);
+    }
+
+    private static RecipeListResponse CreateListResponse(
+        IReadOnlyList<Recipe> recipes,
+        int page,
+        int pageSize,
+        int totalCount)
+    {
         var items = recipes
             .Select(recipe => new RecipeSummaryResponse(
                 recipe.Id,
@@ -64,6 +109,7 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
             .Where(item => item.Id == id && item.Visibility == DomainRecipeVisibility.Public)
             .Include(item => item.Ingredients)
             .Include(item => item.Tags)
+            .Include(item => item.Steps)
             .SingleOrDefaultAsync(cancellationToken);
 
         return recipe is null
@@ -79,6 +125,24 @@ internal sealed class RecipeQueryService(SavorDbContext dbContext) : IRecipeQuer
                         ingredient.Quantity,
                         ingredient.Unit))
                     .ToArray(),
-                recipe.Tags.Select(tag => tag.Name).OrderBy(name => name).ToArray());
+                recipe.Tags.Select(tag => tag.Name).OrderBy(name => name).ToArray(),
+                recipe.Steps
+                    .OrderBy(step => step.StepNumber)
+                    .Select(step => new RecipeStepResponse(step.StepNumber, step.Instruction))
+                    .ToArray());
+    }
+
+    public async Task<IReadOnlyList<string>> ListPublicTagsAsync(
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.RecipeTags
+            .Where(tag => dbContext.Recipes.Any(recipe =>
+                recipe.Id == tag.RecipeId &&
+                recipe.Visibility == DomainRecipeVisibility.Public))
+            .GroupBy(tag => tag.Name)
+            .OrderByDescending(group => group.Count())
+            .ThenBy(group => group.Key)
+            .Select(group => group.Key)
+            .ToListAsync(cancellationToken);
     }
 }

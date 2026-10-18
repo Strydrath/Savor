@@ -6,4 +6,5 @@ public sealed record RecipeResponse(
     string Title,
     string Description,
     IReadOnlyList<RecipeIngredientResponse> Ingredients,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    IReadOnlyList<RecipeStepResponse> Steps);

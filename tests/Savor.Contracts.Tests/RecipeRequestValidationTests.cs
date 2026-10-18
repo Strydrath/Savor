@@ -89,6 +89,16 @@ public sealed class RecipeRequestValidationTests
         Assert.Empty(Validate(recipe));
     }
 
+    [Fact]
+    public void RecipeStepRequest_RejectsMissingInstruction()
+    {
+        var step = new RecipeStepRequest { Instruction = string.Empty };
+
+        var errors = Validate(step);
+
+        Assert.Contains(errors, error => error.MemberNames.Contains(nameof(step.Instruction)));
+    }
+
     private static IReadOnlyList<ValidationResult> Validate(object instance)
     {
         var context = new ValidationContext(instance);

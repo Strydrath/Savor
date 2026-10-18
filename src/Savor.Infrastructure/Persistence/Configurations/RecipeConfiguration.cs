@@ -23,5 +23,10 @@ internal sealed class RecipeConfiguration : IEntityTypeConfiguration<Recipe>
             .WithOne()
             .HasForeignKey(tag => tag.RecipeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(recipe => recipe.Steps)
+            .WithOne()
+            .HasForeignKey(step => step.RecipeId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

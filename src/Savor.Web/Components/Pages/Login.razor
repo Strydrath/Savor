@@ -26,9 +26,9 @@
     private async Task SubmitLogin()
     {
         var result = await Api.LoginAsync(model.Email, model.Password);
-        if (result is null)
+        if (!result.IsSuccess)
         {
-            error = "The email or password is incorrect.";
+            error = result.Error;
             return;
         }
 
